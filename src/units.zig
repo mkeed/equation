@@ -119,8 +119,8 @@ const Unit = union(enum) {
                     }
                 }
                 if (d.dividers) |divider| {
-                    for (divider) |d| {
-                        dim = dim.divide(d.getDimensions());
+                    for (divider) |div| {
+                        dim = dim.divide(div.getDimensions());
                     }
                 }
                 return dim;
@@ -341,6 +341,12 @@ const units = [_]*const Unit{
     &Siemens,
     &Weber,
     &Tesla,
+};
+
+const AlternateUnit = struct {
+    name: []const u8,
+    shortName: ?[]const u8 = null,
+    base: number.Number,
 };
 
 test {
