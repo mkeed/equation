@@ -1,3 +1,4 @@
+const std = @import("std");
 //units from https://physics.nist.gov/cuu/Units/units.html
 
 const UnitDimension = struct {
@@ -9,6 +10,34 @@ const UnitDimension = struct {
     Amount: isize = 0,
     Luminous: isize = 0,
 
+    pub fn format(
+        self: UnitDimension,
+        comptime _: []const u8,
+        _: std.fmt.FormatOptions,
+        writer: anytype,
+    ) !void {
+        if (self.Time != 0) {
+            try std.fmt.format(writer, "s^{}.", .{self.Time});
+        }
+        if (self.Length != 0) {
+            try std.fmt.format(writer, "m^{}.", .{self.Length});
+        }
+        if (self.Mass != 0) {
+            try std.fmt.format(writer, "kg^{}.", .{self.Mass});
+        }
+        if (self.Current != 0) {
+            try std.fmt.format(writer, "A^{}.", .{self.Current});
+        }
+        if (self.Temperature != 0) {
+            try std.fmt.format(writer, "K^{}.", .{self.Temperature});
+        }
+        if (self.Amount != 0) {
+            try std.fmt.format(writer, "mol^{}.", .{self.Amount});
+        }
+        if (self.Luminous != 0) {
+            try std.fmt.format(writer, "m^{}.", .{self.Luminous});
+        }
+    }
     pub fn multiply(a: UnitDimension, b: UnitDimension) UnitDimension {
         return .{
             .Time = a.Time + b.Time,
@@ -105,7 +134,39 @@ const DerivedUnit = struct {
 const Unit = union(enum) {
     base: BaseUnit,
     derived: DerivedUnit,
-
+    pub fn name(self: Unit) []const u8 {
+        switch (self) {
+            .base => |b| return b.name,
+            .derived => |d| return d.name,
+        }
+    }
+    pub fn format(
+        self: Unit,
+        comptime _: []const u8,
+        _: std.fmt.FormatOptions,
+        writer: anytype,
+    ) !void {
+        try std.fmt.format(writer, "Unit:[{s}]{} ", .{ self.name(), self.getDimensions() });
+        switch (self) {
+            .base => {
+                try std.fmt.format(writer, "Base unit", .{});
+            },
+            .derived => |d| {
+                try std.fmt.format(writer, "Unit derived by =>\n", .{});
+                if (d.multipliers) |mul| {
+                    for (mul) |m| {
+                        try std.fmt.format(writer, "[{s}]{} | ", .{ m.name(), m.getDimensions() });
+                    }
+                }
+                try std.fmt.format(writer, "\n-----------\n", .{});
+                if (d.dividers) |div| {
+                    for (div) |d_unit| {
+                        try std.fmt.format(writer, "[{s}]{} | ", .{ d_unit.name(), d_unit.getDimensions() });
+                    }
+                }
+            },
+        }
+    }
     pub fn getDimensions(self: Unit) UnitDimension {
         switch (self) {
             .base => |b| {
@@ -237,8 +298,7 @@ const Joule = Unit{
     .derived = DerivedUnit{
         .name = "Joule",
         .shortName = "J",
-        .multipliers = &.{&Newton},
-        .dividers = &.{&Meter},
+        .multipliers = &.{ &Newton, &Meter },
     },
 };
 
@@ -261,7 +321,7 @@ const Coulomb = Unit{
 
 const Volt = Unit{
     .derived = DerivedUnit{
-        .name = "Vold",
+        .name = "Volt",
         .shortName = "V",
         .multipliers = &.{&Watt},
         .dividers = &.{&Ampere},
@@ -299,8 +359,7 @@ const Weber = Unit{
     .derived = DerivedUnit{
         .name = "Weber",
         .shortName = "Wb",
-        .multipliers = &.{&Volt},
-        .dividers = &.{&Second},
+        .multipliers = &.{ &Volt, &Second },
     },
 };
 
@@ -336,6 +395,8 @@ const units = [_]*const Unit{
     &Pascal,
     &Joule,
     &Watt,
+    &Coulomb,
+    &Volt,
     &Farad,
     &Ohm,
     &Siemens,
@@ -343,12 +404,9 @@ const units = [_]*const Unit{
     &Tesla,
 };
 
-const AlternateUnit = struct {
-    name: []const u8,
-    shortName: ?[]const u8 = null,
-    base: number.Number,
-};
-
 test {
-    _ = units;
+    for (units) |u| {
+        std.log.err("\n{}\n", .{u});
+        //std.log.err("{s},\t{}", .{ u.name(), u.getDimensions() });
+    }
 }
