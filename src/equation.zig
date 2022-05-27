@@ -1,4 +1,5 @@
 const std = @import("std");
+const ast = @import("ast.zig");
 
 pub const Result = union(enum) {
     Integer: isize,
@@ -7,7 +8,7 @@ pub const Result = union(enum) {
 const Operation = struct {
     pub const OpType = enum {
         Multiply,
-        Subtrace,
+        Divide,
         Add,
         Subtract,
     };
@@ -22,8 +23,8 @@ const Node = union(enum) {
 };
 
 const Token = union(enum) {
-    operation: Operation.Optype,
-    Value: Result,
+    operation: Operation.OpType,
+    value: Result,
 };
 
 pub fn parseNumber(eq: []const u8, idx: *usize) !Result {
@@ -69,7 +70,6 @@ pub fn parseNumber(eq: []const u8, idx: *usize) !Result {
 pub const Equation = struct {
     alloc: std.mem.Allocator,
     eq: []const u8,
-    nodes: std.ArrayList(Node),
 
     pub fn compile(alloc: std.mem.Allocator, eq: []const u8) !Equation {
         var tokens = std.ArrayList(Token).init(alloc);
@@ -79,41 +79,36 @@ pub const Equation = struct {
             switch (eq[idx]) {
                 '0'...'9' => {
                     var number = try parseNumber(eq, &idx);
-                    try tokens.append(.{ .Value = number });
+                    try tokens.append(.{ .value = number });
                 },
                 '+' => {
-                    try tokens.append(.Add);
+                    try tokens.append(.{ .operation = .Add });
                     idx += 1;
                 },
                 '-' => {
-                    try tokens.append(.Subtract);
+                    try tokens.append(.{ .operation = .Subtract });
                     idx += 1;
                 },
                 '*' => {
-                    try tokens.append(.Multiply);
+                    try tokens.append(.{ .operation = .Multiply });
                     idx += 1;
                 },
                 '/' => {
-                    try tokens.append(.Divide);
+                    try tokens.append(.{ .operation = .Divide });
                     idx += 1;
                 },
                 else => return error.NotImplemented,
             }
         }
-        var curNode: ?usize = null;
-        var nodes = std.ArrayList(Node).init(alloc);
-        errdefer nodes.deinit();
 
         var tokIter = arrListIter(Token).init(tokens.items);
-
+        var tree = ast.AST.init(alloc);
+        errdefer tree.deinit();
         while (tokIter.next()) |token| {
             std.log.err("{}", .{token});
             switch (token) {
-                .Value => |v| {
-                    curNode = nodes.items.len;
-                    try nodes.append(.{ .constant = v });
-                },
-                .operation => |op| {},
+                .value => |v| {},
+                .operation => |_| {},
             }
         }
 
@@ -165,8 +160,8 @@ const TestCase = struct {
 test {
     const tests = [_]TestCase{
         .{
-            .eq = "1+1",
-            .result = .{ .Integer = 2 },
+            .eq = "1+8/4",
+            .result = .{ .Integer = 3 },
         },
     };
 
