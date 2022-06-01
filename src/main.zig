@@ -1,10 +1,14 @@
 const std = @import("std");
-const testing = std.testing;
+const repl = @import("Repl.zig");
 
-export fn add(a: i32, b: i32) i32 {
-    return a + b;
+pub fn main() anyerror!void {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    const alloc = gpa.allocator();
+
+    try repl.run(alloc);
 }
 
-test "basic add functionality" {
-    try testing.expect(add(3, 7) == 10);
+test "basic test" {
+    try std.testing.expectEqual(10, 3 + 7);
 }

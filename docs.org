@@ -1,0 +1,20 @@
+* Equation
+** Operators
+   - +
+   - -
+   - /
+   - *
+
+* Variables
+** Global
+   Set for the whole session
+*** export [varname] = [declaration]
+    - Declaration
+      - Constant
+      - Function
+      - Equation
+    - varname
+** Local
+* Constants
+* Functions
+

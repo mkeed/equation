@@ -1,0 +1,13 @@
+> 1 + 1
+: 2
+
+> 1w * 1hour
+: 1watt hour
+
+> set area = 100m^2
+? area = 100m^2
+
+> $area * 1.2
+: 1.2m^2
+
+> set 

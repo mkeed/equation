@@ -163,6 +163,14 @@ test {
             .eq = "1+8/4",
             .result = .{ .Integer = 3 },
         },
+        .{
+            .eq = "(1 + 8)/4",
+            .result = .{ .Real = "2.25" },
+        },
+        .{
+            .eq = "1#kmh * 1#hour",
+            .result = .{ .RealUnit = "1km" },
+        },
     };
 
     const alloc = std.testing.allocator;
