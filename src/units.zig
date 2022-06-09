@@ -60,6 +60,15 @@ const UnitDimension = struct {
             .Luminous = a.Luminous - b.Luminous,
         };
     }
+    pub fn equal(a: UnitDimension, b: UnitDimension) bool {
+        return a.Time == b.Time and
+            a.Length == b.Length and
+            a.Mass == b.Mass and
+            a.Current == b.Current and
+            a.Temperature == b.Temperature and
+            a.Amount == b.Amount and
+            a.Luminous == b.Luminous;
+    }
 };
 
 const BaseUnit = struct {
@@ -131,13 +140,45 @@ const DerivedUnit = struct {
     dividers: ?[]const *const Unit = null,
 };
 
-const Unit = union(enum) {
+pub const Unit = union(enum) {
     base: BaseUnit,
     derived: DerivedUnit,
+    pub fn decodeFullName(str: []const u8) !*const Unit {
+        for (units) |u| {
+            if (std.mem.eql(u8, str, u.name())) {
+                return u;
+            }
+        }
+        return error.NotFound;
+    }
+    pub fn decodeShortName(str: []const u8) !*const Unit {
+        for (units) |u| {
+            if (u.shortName()) |uName| {
+                if (std.mem.eql(u8, str, uName)) {
+                    return u;
+                }
+            }
+        }
+        return error.NotFound;
+    }
+    pub fn findBestUnit(dim: UnitDimension) ?*const Unit {
+        for (units) |u| {
+            if (u.getDimensions().equal(dim)) {
+                return u;
+            }
+        }
+        return null;
+    }
     pub fn name(self: Unit) []const u8 {
         switch (self) {
             .base => |b| return b.name,
             .derived => |d| return d.name,
+        }
+    }
+    pub fn shortName(self: Unit) ?[]const u8 {
+        switch (self) {
+            .base => |b| return b.shortName,
+            .derived => |d| return d.shortName,
         }
     }
     pub fn format(
@@ -404,9 +445,26 @@ const units = [_]*const Unit{
     &Tesla,
 };
 
+const unitNameTestsShort = [_][]const u8{
+    "cd",
+    "kg",
+    "J",
+};
+
+const unitNameTests = [_][]const u8{
+    "Pascal",
+    "Newton",
+    "Watt",
+};
 test {
-    for (units) |u| {
-        std.log.err("\n{}\n", .{u});
-        //std.log.err("{s},\t{}", .{ u.name(), u.getDimensions() });
+    for (unitNameTestsShort) |unt| {
+        _ = Unit.decodeShortName(unt) catch {
+            std.log.err("Couldn't find {s}", .{unt});
+        };
+    }
+    for (unitNameTests) |unt| {
+        _ = Unit.decodeFullName(unt) catch {
+            std.log.err("Couldn't find {s}", .{unt});
+        };
     }
 }
